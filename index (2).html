@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Интерактивное Обучение Pro</title>
+  <style>
+    /* === ВСЕ ВАШИ СТИЛИ БЕЗ ИЗМЕНЕНИЙ === */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        overflow-x: hidden;
+    }
+    
+    .container {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        max-width: 900px;
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Кнопка "Сохранить и выйти" */
+    .save-exit-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 6px 14px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        z-index: 100;
+        backdrop-filter: blur(4px);
+        transition: all 0.3s ease;
+    }
+    .save-exit-btn:hover {
+        background: rgba(255, 255, 255, 0.5);
+        transform: scale(1.05);
+    }
+
+    .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px 20px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: rotate 20s linear infinite;
+    }
+    
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .header h1 {
+        font-size: 2.4rem;
+        margin-bottom: 10px;
+        position: relative;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        position: relative;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.5;
+    }
+    
+    .content {
+        padding: 25px 20px;
+    }
+    
+    .start-screen,
+    .lesson-section,
+    .test-section,
+    .result-section {
+        display: none;
+        animation: fadeIn 0.6s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .active {
+        display: block;
+    }
+    
+    .lesson-content {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .lesson-content h2 {
+        font-size: 2rem;
+        color: #2d3748;
+        margin-bottom: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .lesson-content p {
+        font-size: 1.1rem;
+        color: #4a5568;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .image-container {
+        position: relative;
+        display: inline-block;
+        margin: 15px 0;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        transition: transform 0.3s ease;
+    }
+    
+    .image-container:hover {
+        transform: scale(1.02);
+    }
+    
+    .interactive-image {
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+        display: block;
+        border-radius: 20px;
+        position: relative;
+    }
+
+    /* Интерактивная зона — "кнопка Сохранить" */
+    .hotspot {
+        position: absolute;
+        background: transparent;
+        border: 2px dashed rgba(102, 126, 234, 0.5);
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    .hotspot:hover {
+        background: rgba(102, 126, 234, 0.2);
+        border-color: white;
+    }
+    .hotspot.correct {
+        background: rgba(56, 161, 105, 0.4);
+        border-color: #38a169;
+    }
+    
+    .feedback-message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.95);
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 10;
+        transition: opacity 0.3s ease;
+    }
+    
+    .feedback-message.show {
+        opacity: 1;
+    }
+    
+    .feedback-message.error {
+        color: #e53e3e;
+        border-left: 4px solid #e53e3e;
+    }
+    
+    .feedback-message.success {
+        color: #38a169;
+        border-left: 4px solid #38a169;
+    }
+    
+    .progress-container {
+        margin: 20px 0;
+    }
+    
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.95rem;
+    }
+    
+    .progress-bar {
+        height: 10px;
+        background: #e2e8f0;
+        border-radius: 5px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        width: 0%;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 5px;
+    }
+    
+    .buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        padding: 12px 28px;
+        border: none;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+        display: inline-block;
+        min-width: 150px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+    }
+    
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .btn:hover::before {
+        left: 100%;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+    }
+    
+    .test-question {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .test-question h2 {
+        font-size: 2rem;
+        color: #2d3748;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .test-question p {
+        font-size: 1.15rem;
+        color: #4a5568;
+        line-height: 1.6;
+        margin-bottom: 15px;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .test-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 15px;
+    }
+    
+    .test-option {
+        padding: 16px;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #4a5568;
+    }
+    
+    .test-option:hover {
+        background: #edf2f7;
+        transform: translateY(-3px);
+        border-color: #cbd5e0;
+    }
+    
+    .test-option.selected {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+    }
+    
+    .result {
+        text-align: center;
+        padding: 30px 15px;
+    }
+    
+    .result h2 {
+        font-size: 2.4rem;
+        margin-bottom: 20px;
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .result p {
+        font-size: 1.2rem;
+        color: #4a5568;
+        margin-bottom: 25px;
+        line-height: 1.6;
+        max-width: 600px;
+        margin: 0 auto 25px;
+    }
+    
+    .completion-stats {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 18px;
+        text-align: center;
+        margin: 20px 0;
+        box-shadow: 0 8px 20px rgba(72, 187, 120, 0.3);
+    }
+    
+    .completion-stats h3 {
+        font-size: 1.3rem;
+        margin-bottom: 8px;
+    }
+    
+    .lesson-counter {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        padding: 6px 18px;
+        border-radius: 20px;
+        font-weight: 700;
+    }
+
+    /* История попыток */
+    .attempts-history {
+        margin-top: 25px;
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 16px;
+        text-align: left;
+    }
+    .attempts-history h3 {
+        color: #2d3748;
+        margin-bottom: 12px;
+        font-size: 1.2rem;
+    }
+    .attempt-item {
+        padding: 8px 0;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.95rem;
+        color: #4a5568;
+    }
+    .attempt-item:last-child {
+        border-bottom: none;
+    }
+    .attempt-score {
+        font-weight: bold;
+        color: #38a169;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+    
+    @media (max-width: 768px) {
+        .header h1 {
+            font-size: 2rem;
+        }
+        .header p {
+            font-size: 1rem;
+        }
+        .content {
+            padding: 20px 15px;
+        }
+        .lesson-content h2, .test-question h2 {
+            font-size: 1.7rem;
+        }
+        .buttons {
+            flex-direction: column;
+            align-items: center;
+        }
+        .btn {
+            width: 100%;
+            max-width: 280px;
+        }
+        .test-options {
+            grid-template-columns: 1fr;
+        }
+        .save-exit-btn {
+            top: 10px;
+            right: 10px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .header h1 {
+            font-size: 1.7rem;
+        }
+        .lesson-content h2, .test-question h2 {
+            font-size: 1.4rem;
+        }
+        .result h2 {
+            font-size: 2rem;
+        }
+        .content {
+            padding: 15px;
+        }
+        .image-container {
+            margin: 10px 0;
+        }
+        .lesson-content p, .test-question p {
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Начальный экран -->
+    <div class="start-screen active" id="startScreen">
+      <div class="header">
+        <h1>Обучение по Чекеру</h1>
+        <p>Нажмите на правильные элементы на изображении для прохождения курса и кнопку начать.</p>
+      </div>
+      <div class="content">
+        <button class="btn btn-primary" id="startButton">Начать обучение</button>
+
+        <!-- История попыток -->
+        <div class="attempts-history">
+          <h3>История попыток (последние 3)</h3>
+          <div id="attemptsList">
+            <div class="attempt-item">Попыток пока нет</div>
+          </div>
+          <p style="margin-top: 12px; font-weight: 600; color: #2d3748;">
+            Всего попыток: <span id="totalAttempts">0</span> / 99
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Урок с интерактивным изображением -->
+    <div class="lesson-section" id="lessonSection">
+      <button class="save-exit-btn" id="saveExitBtn">Сохранить и выйти</button>
+      <div class="header">
+        <h1>Урок 1: Интерактивный интерфейс</h1>
+        <p>Найдите и нажмите на кнопку "Сохранить"</p>
+      </div>
+      <div class="content">
+        <div class="lesson-content">
+          <h2>Задание</h2>
+          <p>Нажмите на кнопку «Сохранить» на изображении ниже.</p>
+          <div class="image-container">
+            <img src="https://i.postimg.cc/1zCnQ7DP/Screenshot-2.png" alt="Интерфейс" class="interactive-image" id="interactiveImage">
+            <div class="hotspot" style="top: 60%; left: 70%; width: 100px; height: 40px;" id="saveHotspot">
+              Сохранить
+            </div>
+            <div class="feedback-message" id="feedbackMessage">Выберите элемент!</div>
+          </div>
+        </div>
+        <div class="buttons">
+          <button class="btn btn-primary" id="goToTestBtn" disabled>Перейти к тесту</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Тест -->
+    <div class="test-section" id="testSection">
+      <button class="save-exit-btn" id="saveExitBtn2">Сохранить и выйти</button>
+      <div class="header">
+        <h1>Тест по уроку</h1>
+        <p>Выберите правильные ответы</p>
+      </div>
+      <div class="content">
+        <div class="test-question">
+          <h2>Вопрос 1</h2>
+          <p>Что делает кнопка "Главная"?</p>
+          <div class="test-options">
+            <div class="test-option" data-correct="true" onclick="selectOption(this, 0)">Сохраняет изменения</div>
+            <div class="test-option" onclick="selectOption(this, 0)">Удаляет файл</div>
+            <div class="test-option" onclick="selectOption(this, 0)">Открывает настройки</div>
+          </div>
+        </div>
+        <div class="test-question">
+          <h2>Вопрос 2</h2>
+          <p>Где обычно находится Аккаунты?</p>
+          <div class="test-options">
+            <div class="test-option" onclick="selectOption(this, 1)">В левом нижнем углу</div>
+            <div class="test-option" data-correct="true" onclick="selectOption(this, 1)">В правом верхнем углу</div>
+            <div class="test-option" onclick="selectOption(this, 1)">В центре экрана</div>
+          </div>
+        </div>
+        <div class="test-question">
+          <h2>Вопрос 3</h2>
+          <p>Какой цвет часто используется для отображения "Вака"?</p>
+          <div class="test-options">
+            <div class="test-option" onclick="selectOption(this, 2)">Красный</div>
+            <div class="test-option" data-correct="true" onclick="selectOption(this, 2)">Зелёный</div>
+            <div class="test-option" onclick="selectOption(this, 2)">Серый</div>
+          </div>
+        </div>
+        <div class="buttons">
+          <button class="btn btn-primary" id="submitTestBtn" onclick="submitTest()">Проверить ответы</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Результат -->
+    <div class="result-section" id="resultSection">
+      <div class="header">
+        <h1>Результаты</h1>
+        <p>Ваш прогресс сохранён</p>
+      </div>
+      <div class="result">
+        <h2 id="resultTitle">Отличная работа!</h2>
+        <p id="resultText">Вы успешно завершили курс.</p>
+        <div class="completion-stats">
+          <h3>Ваш результат</h3>
+          <div class="lesson-counter" id="scoreDisplay">0 из 3</div>
+        </div>
+        <div class="buttons">
+          <button class="btn btn-primary" onclick="restartCourse()">Пройти снова</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Глобальные переменные
+    let lessonCompleted = false;
+    let testAnswers = [null, null, null];
+    let currentScore = 0;
+
+    // === Инициализация ===
+    window.addEventListener('DOMContentLoaded', () => {
+      loadAttempts();
+      if (localStorage.getItem('courseStarted') === 'true') {
+        // Пропускаем старт, если уже начали (но не будем — покажем старт с историей)
+        // В нашем случае всегда показываем старт, но с историей
+        showSection('startScreen');
+      }
+    });
+
+    // === Навигация ===
+    function showSection(sectionId) {
+      document.querySelectorAll('.start-screen, .lesson-section, .test-section, .result-section')
+        .forEach(el => el.classList.remove('active'));
+      document.getElementById(sectionId).classList.add('active');
+    }
+
+    // === Начало курса ===
+    document.getElementById('startButton')?.addEventListener('click', () => {
+      // Увеличиваем счётчик попыток (макс. 99)
+      let attempts = parseInt(localStorage.getItem('totalAttempts') || '0');
+      if (attempts < 99) {
+        attempts++;
+        localStorage.setItem('totalAttempts', attempts.toString());
+      }
+      localStorage.setItem('courseStarted', 'true');
+      lessonCompleted = false;
+      testAnswers = [null, null, null];
+      currentScore = 0;
+      document.getElementById('goToTestBtn').disabled = true;
+      showSection('lessonSection');
+    });
+
+    // === Интерактивная зона ===
+    document.getElementById('saveHotspot').addEventListener('click', () => {
+      const hotspot = document.getElementById('saveHotspot');
+      const feedback = document.getElementById('feedbackMessage');
+      
+      if (!lessonCompleted) {
+        lessonCompleted = true;
+        hotspot.classList.add('correct');
+        feedback.textContent = 'Верно! Кнопка найдена.';
+        feedback.className = 'feedback-message success show';
+        
+        setTimeout(() => feedback.classList.remove('show'), 2000);
+        document.getElementById('goToTestBtn').disabled = false;
+      }
+    });
+
+    // === Переход к тесту ===
+    document.getElementById('goToTestBtn').addEventListener('click', () => {
+      showSection('testSection');
+    });
+
+    // === Выбор ответа в тесте ===
+    function selectOption(element, questionIndex) {
+      // Сброс выделения для текущего вопроса
+      const options = element.parentElement.querySelectorAll('.test-option');
+      options.forEach(opt => opt.classList.remove('selected'));
+      
+      // Выделение выбранного
+      element.classList.add('selected');
+      testAnswers[questionIndex] = element.dataset.correct === 'true';
+    }
+
+    // === Отправка теста ===
+    function submitTest() {
+      currentScore = testAnswers.filter(Boolean).length;
+      
+      // Сохраняем результат
+      const attempt = {
+        date: new Date().toLocaleDateString('ru-RU'),
+        score: currentScore,
+        max: 3
+      };
+
+      // Получаем историю
+      let history = JSON.parse(localStorage.getItem('attemptsHistory') || '[]');
+      history.push(attempt);
+      // Оставляем только последние 3
+      if (history.length > 3) history = history.slice(-3);
+      localStorage.setItem('attemptsHistory', JSON.stringify(history));
+      localStorage.setItem('lastScore', currentScore.toString());
+
+      // Показываем результат
+      document.getElementById('scoreDisplay').textContent = `${currentScore} из 3`;
+      document.getElementById('resultTitle').textContent = 
+        currentScore === 3 ? 'Отлично!' : 
+        currentScore >= 2 ? 'Хорошо!' : 'Попробуйте ещё раз';
+      document.getElementById('resultText').textContent = 
+        currentScore === 3 ? 'Вы отлично справились!' : 
+        'Не все ответы верны. Повторите урок при желании.';
+
+      showSection('resultSection');
+    }
+
+    // === Сохранить и выйти ===
+    function saveAndExit() {
+      // Сохраняем текущий прогресс (если есть)
+      if (lessonCompleted && testAnswers.some(a => a !== null)) {
+        // Частичный результат не сохраняем как попытку — только полные
+        // Но можно добавить логику "черновика", если нужно
+      }
+      // Возвращаем на старт
+      loadAttempts();
+      showSection('startScreen');
+    }
+
+    document.getElementById('saveExitBtn')?.addEventListener('click', saveAndExit);
+    document.getElementById('saveExitBtn2')?.addEventListener('click', saveAndExit);
+
+    // === Перезапуск ===
+    function restartCourse() {
+      lessonCompleted = false;
+      testAnswers = [null, null, null];
+      currentScore = 0;
+      document.getElementById('goToTestBtn').disabled = true;
+      document.getElementById('saveHotspot').classList.remove('correct');
+      showSection('lessonSection');
+    }
+
+    // === Загрузка истории попыток ===
+    function loadAttempts() {
+      const total = localStorage.getItem('totalAttempts') || '0';
+      document.getElementById('totalAttempts').textContent = total;
+
+      const history = JSON.parse(localStorage.getItem('attemptsHistory') || '[]');
+      const list = document.getElementById('attemptsList');
+      
+      if (history.length === 0) {
+        list.innerHTML = '<div class="attempt-item">Попыток пока нет</div>';
+      } else {
+        list.innerHTML = history.map(item => 
+          `<div class="attempt-item">${item.date}: <span class="attempt-score">${item.score}/${item.max}</span></div>`
+        ).join('');
+      }
+    }
+  </script>
+</body>
+</html>
