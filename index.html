@@ -3,1053 +3,354 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Обучение</title>
+  <title>🦕 Динозаврик — Игра</title>
   <style>
     * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    
+
     body {
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 10px;
-        overflow-x: hidden;
-    }
-    
-    .container {
-        background: white;
-        border-radius: 24px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        max-width: 900px;
-        width: 100%;
-        overflow: hidden;
-        position: relative;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: white;
+      overflow: hidden;
     }
 
-    .steps-indicator {
-        display: flex;
-        justify-content: center;
-        padding: 12px 0;
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        font-size: 0.95rem;
-        color: #718096;
-    }
-    .step {
-        display: flex;
-        align-items: center;
-    }
-    .step:not(:last-child)::after {
-        content: "→";
-        margin: 0 10px;
-        color: #a0aec0;
-    }
-    .step.active {
-        color: #667eea;
-        font-weight: 600;
+    h1 {
+      font-size: 2.8rem;
+      margin-bottom: 15px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      letter-spacing: 2px;
     }
 
-    .save-exit-btn {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: rgba(255, 255, 255, 0.3);
-        color: white;
-        border: none;
-        border-radius: 20px;
-        padding: 6px 14px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        z-index: 100;
-        backdrop-filter: blur(4px);
-        transition: all 0.3s ease;
-    }
-    .save-exit-btn:hover {
-        background: rgba(255, 255, 255, 0.5);
-        transform: scale(1.05);
+    .game-info {
+      display: flex;
+      gap: 30px;
+      margin-bottom: 20px;
+      font-size: 1.4rem;
+      font-weight: bold;
     }
 
-    .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 30px 20px;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
+    #game-container {
+      position: relative;
+      width: 800px;
+      height: 220px;
+      background: #f0f0f0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      background: linear-gradient(to bottom, #e0e0e0 0%, #ffffff 100%);
     }
-    
-    .header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        animation: rotate 20s linear infinite;
+
+    #ground {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 2px;
+      background: #333;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
-    
-    @keyframes rotate {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+
+    #dino {
+      position: absolute;
+      bottom: 0;
+      left: 80px;
+      width: 50px;
+      height: 60px;
+      background: #333;
+      border-radius: 8px 8px 0 0;
+      z-index: 10;
+      transform-origin: bottom center;
     }
-    
-    .header h1 {
-        font-size: 2.4rem;
-        margin-bottom: 10px;
-        position: relative;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+
+    /* Анимация "бега" */
+    @keyframes run {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+      100% { transform: translateY(0); }
     }
-    
-    .header p {
-        font-size: 1.1rem;
-        opacity: 0.9;
-        position: relative;
-        max-width: 600px;
-        margin: 0 auto;
-        line-height: 1.5;
+
+    .running {
+      animation: run 0.2s infinite;
     }
-    
-    .content {
-        padding: 25px 20px;
+
+    .cactus {
+      position: absolute;
+      bottom: 2px;
+      width: 22px;
+      height: 50px;
+      background: #2e7d32;
+      border-radius: 4px 4px 0 0;
+      z-index: 5;
     }
-    
-    .start-screen,
-    .lesson-section,
-    .test-section,
-    .result-section {
-        display: none;
-        animation: fadeIn 0.6s ease-out;
+
+    .cactus::before,
+    .cactus::after {
+      content: '';
+      position: absolute;
+      background: #2e7d32;
+      border-radius: 2px;
     }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+
+    .cactus::before {
+      width: 8px;
+      height: 20px;
+      left: -4px;
+      top: 10px;
     }
-    
-    .active {
-        display: block;
+
+    .cactus::after {
+      width: 8px;
+      height: 18px;
+      right: -4px;
+      top: 20px;
     }
-    
-    .lesson-content {
-        text-align: center;
-        margin-bottom: 20px;
+
+    #game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 20px 40px;
+      border-radius: 12px;
+      font-size: 2.2rem;
+      font-weight: bold;
+      text-align: center;
+      display: none;
+      z-index: 100;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+      animation: pulse 1.5s infinite;
     }
-    
-    .lesson-content h2 {
+
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.05); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    #restart-btn {
+      margin-top: 25px;
+      padding: 12px 30px;
+      font-size: 1.2rem;
+      background: #ff5722;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    #restart-btn:hover {
+      background: #e64a19;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    #restart-btn:active {
+      transform: translateY(1px);
+    }
+
+    .instructions {
+      margin-top: 20px;
+      font-size: 1rem;
+      opacity: 0.9;
+      text-align: center;
+    }
+
+    @media (max-width: 850px) {
+      #game-container {
+        width: 95vw;
+        height: 180px;
+      }
+      h1 {
         font-size: 2rem;
-        color: #2d3748;
-        margin-bottom: 15px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    
-    .lesson-content p {
+      }
+      .game-info {
         font-size: 1.1rem;
-        color: #4a5568;
-        line-height: 1.6;
-        margin-bottom: 20px;
-        max-width: 700px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    .image-container {
-        position: relative;
-        display: inline-block;
-        margin: 15px 0;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-        transition: transform 0.3s ease;
-    }
-    
-    .image-container:hover {
-        transform: scale(1.02);
-    }
-    
-    .interactive-image {
-        width: 100%;
-        max-width: 600px;
-        height: auto;
-        display: block;
-        border-radius: 20px;
-        position: relative;
-    }
-
-    .hotspot {
-        position: absolute;
-        background: transparent;
-        border: 2px dashed rgba(102, 126, 234, 0.5);
-        border-radius: 8px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-        pointer-events: auto; /* Важно! */
-    }
-    .hotspot:hover {
-        background: rgba(102, 126, 234, 0.2);
-        border-color: white;
-    }
-    .hotspot.correct {
-        background: rgba(56, 161, 105, 0.4);
-        border-color: #38a169;
-    }
-
-    .hotspot.pulse-hint {
-        animation: pulse-hint 2s infinite;
-    }
-    @keyframes pulse-hint {
-        0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
-    }
-    
-    .feedback-message {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(255, 255, 255, 0.95);
-        padding: 12px 20px;
-        border-radius: 12px;
-        font-weight: 600;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        opacity: 0;
-        pointer-events: none;
-        z-index: 10;
-        transition: opacity 0.3s ease;
-    }
-    
-    .feedback-message.show {
-        opacity: 1;
-    }
-    
-    .feedback-message.error {
-        color: #e53e3e;
-        border-left: 4px solid #e53e3e;
-    }
-    
-    .feedback-message.success {
-        color: #38a169;
-        border-left: 4px solid #38a169;
-    }
-    
-    .progress-container {
-        margin: 20px 0;
-    }
-    
-    .progress-info {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-        font-weight: 600;
-        color: #4a5568;
-        font-size: 0.95rem;
-    }
-    
-    .progress-bar {
-        height: 10px;
-        background: #e2e8f0;
-        border-radius: 5px;
-        overflow: hidden;
-        position: relative;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
-        width: 0%;
-        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        border-radius: 5px;
-    }
-    
-    .buttons {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-        margin-top: 20px;
-        flex-wrap: wrap;
-    }
-    
-    .btn {
-        padding: 12px 28px;
-        border: none;
-        border-radius: 50px;
-        font-size: 1rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        text-decoration: none;
-        display: inline-block;
-        min-width: 150px;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 3px 12px rgba(0,0,0,0.18);
-    }
-    
-    .btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        transition: left 0.5s;
-    }
-    
-    .btn:hover::before {
-        left: 100%;
-    }
-    
-    .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    }
-    
-    .btn-secondary {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-    }
-    
-    .btn-secondary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-    }
-
-    .btn-clear {
-        background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-        color: white;
-        font-size: 0.9rem;
-        padding: 8px 16px;
-        min-width: auto;
-    }
-    
-    .test-question {
-        text-align: center;
-        margin-bottom: 15px;
-    }
-    
-    .test-question h2 {
-        font-size: 2rem;
-        color: #2d3748;
-        margin-bottom: 12px;
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    
-    .test-question p {
-        font-size: 1.15rem;
-        color: #4a5568;
-        line-height: 1.6;
-        margin-bottom: 15px;
-        max-width: 700px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    .test-options {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 12px;
-        margin-top: 15px;
-    }
-    
-    .test-option {
-        padding: 16px;
-        background: #f8fafc;
-        border: 2px solid #e2e8f0;
-        border-radius: 14px;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        text-align: center;
-        font-size: 1.05rem;
-        font-weight: 600;
-        color: #4a5568;
-    }
-    
-    .test-option:hover {
-        background: #edf2f7;
-        transform: translateY(-3px);
-        border-color: #cbd5e0;
-    }
-    
-    .test-option.selected {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-color: #667eea;
-        transform: translateY(-3px);
-        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
-    }
-
-    .timer {
-        text-align: center;
-        font-weight: bold;
-        color: #e53e3e;
-        font-size: 1.1rem;
-        margin-bottom: 15px;
-        padding: 8px;
-        background: #fff8f8;
-        border-radius: 8px;
-        display: none;
-    }
-    .timer.active {
-        display: block;
-    }
-    
-    .result {
-        text-align: center;
-        padding: 30px 15px;
-    }
-    
-    .result h2 {
-        font-size: 2.4rem;
-        margin-bottom: 20px;
-        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    
-    .result p {
-        font-size: 1.2rem;
-        color: #4a5568;
-        margin-bottom: 25px;
-        line-height: 1.6;
-        max-width: 600px;
-        margin: 0 auto 25px;
-    }
-
-    .explanations {
-        background: #f8fafc;
-        padding: 20px;
-        border-radius: 16px;
-        margin-top: 20px;
-        text-align: left;
-    }
-    .explanations h3 {
-        color: #2d3748;
-        margin-bottom: 12px;
-        font-size: 1.3rem;
-    }
-    .explanation-item {
-        margin-bottom: 12px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    .explanation-item:last-child {
-        border-bottom: none;
-    }
-    .explanation-correct {
-        color: #38a169;
-        font-weight: bold;
-    }
-    .explanation-incorrect {
-        color: #e53e3e;
-    }
-    
-    .completion-stats {
-        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 18px;
-        text-align: center;
-        margin: 20px 0;
-        box-shadow: 0 8px 20px rgba(72, 187, 120, 0.3);
-    }
-    
-    .completion-stats h3 {
-        font-size: 1.3rem;
-        margin-bottom: 8px;
-    }
-    
-    .lesson-counter {
-        display: inline-block;
-        background: rgba(255,255,255,0.2);
-        padding: 6px 18px;
-        border-radius: 20px;
-        font-weight: 700;
-    }
-
-    .attempts-history {
-        margin-top: 25px;
-        background: #f8fafc;
-        padding: 15px;
-        border-radius: 16px;
-        text-align: left;
-    }
-    .attempts-history h3 {
-        color: #2d3748;
-        margin-bottom: 12px;
-        font-size: 1.2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .clear-history-btn {
-        background: none;
-        border: none;
-        color: #e53e3e;
-        font-size: 0.9rem;
-        cursor: pointer;
-        font-weight: 600;
-    }
-    .clear-history-btn:hover {
-        text-decoration: underline;
-    }
-    .attempt-item {
-        padding: 8px 0;
-        border-bottom: 1px solid #e2e8f0;
-        font-size: 0.95rem;
-        color: #4a5568;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .attempt-item:last-child {
-        border-bottom: none;
-    }
-    .attempt-score {
-        font-weight: bold;
-        color: #38a169;
-    }
-    .attempt-incomplete {
-        color: #e53e3e;
-        font-style: italic;
-    }
-    .continue-btn {
-        background: none;
-        border: 1px solid #667eea;
-        color: #667eea;
-        padding: 4px 10px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-left: 8px;
-    }
-    .continue-btn:hover {
-        background: #667eea;
-        color: white;
-    }
-    
-    @media (max-width: 768px) {
-        .header h1 {
-            font-size: 2rem;
-        }
-        .header p {
-            font-size: 1rem;
-        }
-        .content {
-            padding: 20px 15px;
-        }
-        .lesson-content h2, .test-question h2 {
-            font-size: 1.7rem;
-        }
-        .buttons {
-            flex-direction: column;
-            align-items: center;
-        }
-        .btn {
-            width: 100%;
-            max-width: 280px;
-        }
-        .test-options {
-            grid-template-columns: 1fr;
-        }
-        .save-exit-btn {
-            top: 10px;
-            right: 10px;
-            padding: 4px 10px;
-            font-size: 0.75rem;
-        }
-        .attempt-item {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        .continue-btn {
-            margin-top: 6px;
-            margin-left: 0;
-        }
-        .steps-indicator {
-            font-size: 0.8rem;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .header h1 {
-            font-size: 1.7rem;
-        }
-        .lesson-content h2, .test-question h2 {
-            font-size: 1.4rem;
-        }
-        .result h2 {
-            font-size: 2rem;
-        }
-        .content {
-            padding: 15px;
-        }
-        .image-container {
-            margin: 10px 0;
-        }
-        .lesson-content p, .test-question p {
-            font-size: 1rem;
-            margin-bottom: 12px;
-        }
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="steps-indicator">
-      <div class="step" id="step-start">Начало</div>
-      <div class="step" id="step-lesson">Урок</div>
-      <div class="step" id="step-test">Тест</div>
-      <div class="step" id="step-result">Результат</div>
-    </div>
+  <h1>🦕 Динозаврик</h1>
 
-    <div class="start-screen active" id="startScreen">
-      <div class="header">
-        <h1>Обучение по Чекеру</h1>
-        <p>Нажмите на правильные элементы на изображении для прохождения курса.</p>
-      </div>
-      <div class="content">
-        <button class="btn btn-primary" id="startButton">Начать новую попытку</button>
-        <div class="attempts-history">
-          <h3>
-            Последние попытки
-            <button class="clear-history-btn" id="clearHistoryBtn">Очистить всю историю</button>
-          </h3>
-          <div id="attemptsList">
-            <div class="attempt-item">Попыток пока нет</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="lesson-section" id="lessonSection">
-      <button class="save-exit-btn" id="saveExitBtn">Сохранить и выйти</button>
-      <div class="header">
-        <h1>Урок 1: Интерактивный интерфейс</h1>
-        <p>Найдите и нажмите на кнопку "Сохранить"</p>
-      </div>
-      <div class="content">
-        <div class="lesson-content">
-          <h2>Задание</h2>
-          <p>Нажмите на кнопку «Сохранить» на изображении ниже.</p>
-          <div class="image-container">
-            <img src="https://i.postimg.cc/1zCnQ7DP/Screenshot-2.png" alt="Интерфейс приложения" class="interactive-image" id="interactiveImage">
-            <div class="hotspot" style="top: 60%; left: 70%; width: 100px; height: 40px;" id="saveHotspot">
-              Сохранить
-            </div>
-            <div class="feedback-message" id="feedbackMessage">Выберите элемент!</div>
-          </div>
-        </div>
-        <div class="buttons">
-          <button class="btn btn-primary" id="goToTestBtn" disabled>Перейти к тесту</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="test-section" id="testSection">
-      <button class="save-exit-btn" id="saveExitBtn2">Сохранить и выйти</button>
-      <div class="header">
-        <h1>Тест по уроку</h1>
-        <p>Выберите правильные ответы</p>
-      </div>
-      <div class="content">
-        <div class="timer" id="testTimer">Осталось: 3:00</div>
-        <div class="test-question">
-          <h2>Вопрос 1</h2>
-          <p>Что делает кнопка "Главная"?</p>
-          <div class="test-options">
-            <div class="test-option" data-correct="true" data-explanation="Кнопка 'Главная' в данном интерфейсе сохраняет текущие изменения." onclick="selectOption(this, 0)">Сохраняет изменения</div>
-            <div class="test-option" data-explanation="Удаление файла выполняется через другое меню." onclick="selectOption(this, 0)">Удаляет файл</div>
-            <div class="test-option" data-explanation="Настройки открываются через иконку шестерёнки." onclick="selectOption(this, 0)">Открывает настройки</div>
-          </div>
-        </div>
-        <div class="test-question">
-          <h2>Вопрос 2</h2>
-          <p>Где обычно находится Аккаунты?</p>
-          <div class="test-options">
-            <div class="test-option" data-explanation="Левый нижний угол обычно содержит навигацию." onclick="selectOption(this, 1)">В левом нижнем углу</div>
-            <div class="test-option" data-correct="true" data-explanation="Аккаунты расположены в правом верхнем углу для быстрого доступа." onclick="selectOption(this, 1)">В правом верхнем углу</div>
-            <div class="test-option" data-explanation="Центр экрана занят основным контентом." onclick="selectOption(this, 1)">В центре экрана</div>
-          </div>
-        </div>
-        <div class="test-question">
-          <h2>Вопрос 3</h2>
-          <p>Какой цвет часто используется для отображения "Вака"?</p>
-          <div class="test-options">
-            <div class="test-option" data-explanation="Красный обычно означает ошибку или отсутствие." onclick="selectOption(this, 2)">Красный</div>
-            <div class="test-option" data-correct="true" data-explanation="Зелёный цвет указывает на активное или успешное состояние 'Вака'." onclick="selectOption(this, 2)">Зелёный</div>
-            <div class="test-option" data-explanation="Серый — неактивное состояние." onclick="selectOption(this, 2)">Серый</div>
-          </div>
-        </div>
-        <div class="buttons">
-          <button class="btn btn-primary" id="submitTestBtn" onclick="submitTest()">Проверить ответы</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="result-section" id="resultSection">
-      <div class="header">
-        <h1>Результаты</h1>
-        <p>Ваш прогресс сохранён</p>
-      </div>
-      <div class="result">
-        <h2 id="resultTitle">Отличная работа!</h2>
-        <p id="resultText">Вы успешно завершили курс.</p>
-        <div class="completion-stats">
-          <h3>Ваш результат</h3>
-          <div class="lesson-counter" id="scoreDisplay">0 из 3</div>
-        </div>
-        <div class="explanations" id="explanationsSection">
-          <h3>Разбор ответов</h3>
-          <div id="explanationsList"></div>
-        </div>
-        <div class="buttons">
-          <button class="btn btn-primary" onclick="restartCourse()">Пройти снова</button>
-        </div>
-      </div>
-    </div>
+  <div class="game-info">
+    <div id="score">Счёт: <span>0</span></div>
+    <div id="high-score">Рекорд: <span>0</span></div>
   </div>
 
+  <div id="game-container">
+    <div id="ground"></div>
+    <div id="dino"></div>
+    <div id="game-over">ИГРА ОКОНЧЕНА!</div>
+  </div>
+
+  <button id="restart-btn">Начать заново</button>
+  <div class="instructions">Нажмите ПРОБЕЛ или КЛИКНИТЕ, чтобы прыгнуть</div>
+
   <script>
-    let lessonCompleted = false;
-    let testAnswers = [null, null, null];
-    let currentScore = 0;
-    let currentAttemptId = null;
-    let mistakeCount = 0;
-    let testTimer = null;
-    let timeLeft = 180;
+    const dino = document.getElementById('dino');
+    const gameContainer = document.getElementById('game-container');
+    const scoreDisplay = document.getElementById('score').querySelector('span');
+    const highScoreDisplay = document.getElementById('high-score').querySelector('span');
+    const gameOverDisplay = document.getElementById('game-over');
+    const restartBtn = document.getElementById('restart-btn');
 
-    function generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    let isJumping = false;
+    let isGameOver = false;
+    let score = 0;
+    let highScore = localStorage.getItem('dinoHighScore') || 0;
+    let gameSpeed = 6;
+    let cacti = [];
+    let animationId;
+
+    highScoreDisplay.textContent = highScore;
+
+    function jump() {
+      if (isJumping || isGameOver) return;
+      isJumping = true;
+      dino.classList.remove('running');
+
+      let jumpHeight = 0;
+      const jumpDuration = 400;
+      const startTime = performance.now();
+
+      function animateJump(time) {
+        const elapsed = time - startTime;
+        const progress = Math.min(elapsed / jumpDuration, 1);
+
+        jumpHeight = 120 * (1 - Math.pow(2 * progress - 1, 2));
+
+        dino.style.bottom = jumpHeight + 'px';
+
+        if (progress < 1) {
+          requestAnimationFrame(animateJump);
+        } else {
+          dino.style.bottom = '0px';
+          isJumping = false;
+          dino.classList.add('running');
+        }
+      }
+
+      requestAnimationFrame(animateJump);
     }
 
-    function updateStepIndicator(activeStep) {
-      const steps = ['start', 'lesson', 'test', 'result'];
-      steps.forEach(step => {
-        const el = document.getElementById(`step-${step}`);
-        if (el) {
-          el.classList.toggle('active', step === activeStep);
+    function createCactus() {
+      if (isGameOver) return;
+      const cactus = document.createElement('div');
+      cactus.classList.add('cactus');
+      cactus.style.left = gameContainer.offsetWidth + 'px';
+      gameContainer.appendChild(cactus);
+      cacti.push(cactus);
+    }
+
+    function moveCacti() {
+      cacti.forEach((cactus, index) => {
+        const currentLeft = parseInt(cactus.style.left) || 0;
+        const newLeft = currentLeft - gameSpeed;
+
+        if (newLeft < -30) {
+          cactus.remove();
+          cacti.splice(index, 1);
+          score++;
+          scoreDisplay.textContent = score;
+
+          if (score % 15 === 0) {
+            gameSpeed += 0.8;
+          }
+        } else {
+          cactus.style.left = newLeft + 'px';
         }
       });
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      loadAttempts();
-      updateStepIndicator('start');
-    });
-
-    function showSection(sectionId) {
-      document.querySelectorAll('.start-screen, .lesson-section, .test-section, .result-section')
-        .forEach(el => el.classList.remove('active'));
-      
-      const sectionMap = {
-        'startScreen': 'start',
-        'lessonSection': 'lesson',
-        'testSection': 'test',
-        'resultSection': 'result'
-      };
-      const step = sectionMap[sectionId] || 'start';
-      updateStepIndicator(step);
-      
-      document.getElementById(sectionId).classList.add('active');
-    }
-
-    function saveProgress() {
-      if (!currentAttemptId) return;
-      const progress = {
-        lessonCompleted,
-        testAnswers: [...testAnswers],
-        mistakeCount
-      };
-      localStorage.setItem(`attempt_${currentAttemptId}`, JSON.stringify(progress));
-    }
-
-    document.getElementById('startButton')?.addEventListener('click', () => {
-      currentAttemptId = generateId();
-      lessonCompleted = false;
-      testAnswers = [null, null, null];
-      currentScore = 0;
-      mistakeCount = 0;
-      document.getElementById('goToTestBtn').disabled = true;
-      document.getElementById('saveHotspot').classList.remove('correct', 'pulse-hint');
-      showSection('lessonSection');
-      saveProgress();
-
-      setTimeout(() => {
-        if (!lessonCompleted) {
-          const feedback = document.getElementById('feedbackMessage');
-          feedback.textContent = 'Подсказка: кнопка "Сохранить" находится в правой части изображения.';
-          feedback.className = 'feedback-message error show';
-          setTimeout(() => feedback.classList.remove('show'), 3000);
-          document.getElementById('saveHotspot').classList.add('pulse-hint');
+    function checkCollision() {
+      const dinoRect = dino.getBoundingClientRect();
+      cacti.forEach(cactus => {
+        const cactusRect = cactus.getBoundingClientRect();
+        if (
+          dinoRect.left < cactusRect.right - 5 &&
+          dinoRect.right > cactusRect.left + 5 &&
+          dinoRect.top < cactusRect.bottom - 5 &&
+          dinoRect.bottom > cactusRect.top + 5
+        ) {
+          gameOver();
         }
-      }, 3000);
-    });
-
-    function continueAttempt(attemptId) {
-      currentAttemptId = attemptId;
-      const saved = localStorage.getItem(`attempt_${attemptId}`);
-      if (saved) {
-        const data = JSON.parse(saved);
-        lessonCompleted = data.lessonCompleted || false;
-        testAnswers = data.testAnswers || [null, null, null];
-        mistakeCount = data.mistakeCount || 0;
-      } else {
-        lessonCompleted = false;
-        testAnswers = [null, null, null];
-        mistakeCount = 0;
-      }
-
-      if (lessonCompleted) {
-        document.getElementById('saveHotspot').classList.add('correct');
-        document.getElementById('goToTestBtn').disabled = false;
-        showSection('testSection');
-        startTestTimer();
-      } else {
-        document.getElementById('saveHotspot').classList.remove('correct', 'pulse-hint');
-        document.getElementById('goToTestBtn').disabled = true;
-        showSection('lessonSection');
-      }
-    }
-
-    document.getElementById('saveHotspot').addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!lessonCompleted) {
-        lessonCompleted = true;
-        const hotspot = document.getElementById('saveHotspot');
-        hotspot.classList.add('correct');
-        hotspot.classList.remove('pulse-hint');
-        const feedback = document.getElementById('feedbackMessage');
-        feedback.textContent = 'Верно! Кнопка найдена.';
-        feedback.className = 'feedback-message success show';
-        setTimeout(() => feedback.classList.remove('show'), 2000);
-        document.getElementById('goToTestBtn').disabled = false;
-        saveProgress();
-      }
-    });
-
-    // Клик по изображению (вне hotspot'а) = ошибка
-    document.getElementById('interactiveImage').addEventListener('click', (e) => {
-      if (lessonCompleted) return;
-      mistakeCount++;
-      const feedback = document.getElementById('feedbackMessage');
-      feedback.textContent = mistakeCount >= 2 ? 
-        'Подсказка: ищите кнопку "Сохранить" в правой части изображения!' : 
-        'Не та область. Попробуйте снова.';
-      feedback.className = 'feedback-message error show';
-      setTimeout(() => feedback.classList.remove('show'), 2000);
-      saveProgress();
-
-      if (mistakeCount >= 2) {
-        document.getElementById('saveHotspot').classList.add('pulse-hint');
-      }
-    });
-
-    document.getElementById('goToTestBtn').addEventListener('click', () => {
-      saveProgress();
-      showSection('testSection');
-      startTestTimer();
-    });
-
-    function startTestTimer() {
-      clearInterval(testTimer);
-      timeLeft = 180;
-      updateTimerDisplay();
-
-      testTimer = setInterval(() => {
-        timeLeft--;
-        updateTimerDisplay();
-        if (timeLeft <= 0) {
-          clearInterval(testTimer);
-          if (confirm('Время вышло! Хотите отправить тест сейчас?')) {
-            submitTest();
-          } else {
-            submitTest();
-          }
-        }
-      }, 1000);
-    }
-
-    function updateTimerDisplay() {
-      const minutes = Math.floor(timeLeft / 60);
-      const seconds = timeLeft % 60;
-      document.getElementById('testTimer').textContent = 
-        `Осталось: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-      document.getElementById('testTimer').classList.add('active');
-    }
-
-    function selectOption(element, questionIndex) {
-      const options = element.parentElement.querySelectorAll('.test-option');
-      options.forEach(opt => opt.classList.remove('selected'));
-      element.classList.add('selected');
-      testAnswers[questionIndex] = element.dataset.correct === 'true';
-      saveProgress();
-    }
-
-    function submitTest() {
-      clearInterval(testTimer);
-      currentScore = testAnswers.filter(Boolean).length;
-      
-      const attemptRecord = {
-        id: currentAttemptId,
-        date: new Date().toLocaleDateString('ru-RU'),
-        score: currentScore,
-        max: 3,
-        completed: true
-      };
-
-      let history = JSON.parse(localStorage.getItem('attemptsHistory') || '[]');
-      history = history.filter(a => a.id !== currentAttemptId);
-      history.push(attemptRecord);
-      if (history.length > 3) history = history.slice(-3);
-      localStorage.setItem('attemptsHistory', JSON.stringify(history));
-
-      localStorage.removeItem(`attempt_${currentAttemptId}`);
-
-      document.getElementById('scoreDisplay').textContent = `${currentScore} из 3`;
-      document.getElementById('resultTitle').textContent = 
-        currentScore === 3 ? 'Отлично!' : 
-        currentScore >= 2 ? 'Хорошо!' : 'Попробуйте ещё раз';
-      document.getElementById('resultText').textContent = 
-        currentScore === 3 ? 'Вы отлично справились!' : 
-        'Не все ответы верны. Повторите урок при желании.';
-
-      const explanationsList = document.getElementById('explanationsList');
-      explanationsList.innerHTML = '';
-      const questions = document.querySelectorAll('.test-question');
-      questions.forEach((q, i) => {
-        const selectedOption = q.querySelector('.test-option.selected');
-        const correctOption = q.querySelector('.test-option[data-correct="true"]');
-        const explanation = selectedOption?.dataset.explanation || correctOption?.dataset.explanation || 'Нет пояснения.';
-        const isCorrect = testAnswers[i] === true;
-
-        const div = document.createElement('div');
-        div.className = 'explanation-item';
-        div.innerHTML = `
-          <strong>Вопрос ${i + 1}:</strong> 
-          <span class="${isCorrect ? 'explanation-correct' : 'explanation-incorrect'}">
-            ${isCorrect ? '✅ Верно' : '❌ Неверно'}
-          </span><br>
-          <em>Пояснение:</em> ${explanation}
-        `;
-        explanationsList.appendChild(div);
       });
-
-      showSection('resultSection');
-      loadAttempts();
     }
 
-    function saveAndExit() {
-      clearInterval(testTimer);
-      saveProgress();
+    function gameOver() {
+      isGameOver = true;
+      cancelAnimationFrame(animationId);
 
-      let history = JSON.parse(localStorage.getItem('attemptsHistory') || '[]');
-      const existing = history.find(a => a.id === currentAttemptId);
-      if (!existing) {
-        history.push({
-          id: currentAttemptId,
-          date: new Date().toLocaleDateString('ru-RU'),
-          completed: false
-        });
-        if (history.length > 3) history = history.slice(-3);
-        localStorage.setItem('attemptsHistory', JSON.stringify(history));
+      // Обновление рекорда
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('dinoHighScore', highScore);
+        highScoreDisplay.textContent = highScore;
       }
 
-      showSection('startScreen');
-      loadAttempts();
+      gameOverDisplay.style.display = 'block';
     }
 
-    document.getElementById('saveExitBtn')?.addEventListener('click', saveAndExit);
-    document.getElementById('saveExitBtn2')?.addEventListener('click', saveAndExit);
+    function gameLoop() {
+      if (isGameOver) return;
+      moveCacti();
+      checkCollision();
+      animationId = requestAnimationFrame(gameLoop);
+    }
 
-    function restartCourse() {
-      currentAttemptId = generateId();
-      lessonCompleted = false;
-      testAnswers = [null, null, null];
-      currentScore = 0;
-      mistakeCount = 0;
-      document.getElementById('goToTestBtn').disabled = true;
-      document.getElementById('saveHotspot').classList.remove('correct', 'pulse-hint');
-      showSection('lessonSection');
-      saveProgress();
+    function startGame() {
+      isGameOver = false;
+      score = 0;
+      gameSpeed = 6;
+      cacti.forEach(c => c.remove());
+      cacti = [];
+      dino.style.bottom = '0px';
+      dino.classList.add('running');
+      gameOverDisplay.style.display = 'none';
+      scoreDisplay.textContent = '0';
 
-      setTimeout(() => {
-        if (!lessonCompleted) {
-          const feedback = document.getElementById('feedbackMessage');
-          feedback.textContent = 'Подсказка: кнопка "Сохранить" находится в правой части изображения.';
-          feedback.className = 'feedback-message error show';
-          setTimeout(() => feedback.classList.remove('show'), 3000);
-          document.getElementById('saveHotspot').classList.add('pulse-hint');
+      setTimeout(createCactus, 2500);
+      setInterval(() => {
+        if (!isGameOver) createCactus();
+      }, 2500);
+
+      gameLoop();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        if (isGameOver) {
+          startGame();
+        } else {
+          jump();
         }
-      }, 3000);
-    }
-
-    document.getElementById('clearHistoryBtn')?.addEventListener('click', () => {
-      if (confirm('Вы уверены, что хотите удалить всю историю попыток? Это действие нельзя отменить.')) {
-        localStorage.removeItem('attemptsHistory');
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('attempt_')) {
-            localStorage.removeItem(key);
-          }
-        });
-        loadAttempts();
+        e.preventDefault();
       }
     });
 
-    function loadAttempts() {
-      const history = JSON.parse(localStorage.getItem('attemptsHistory') || '[]');
-      const list = document.getElementById('attemptsList');
-      
-      if (history.length === 0) {
-        list.innerHTML = '<div class="attempt-item">Попыток пока нет</div>';
+    gameContainer.addEventListener('click', () => {
+      if (isGameOver) {
+        startGame();
       } else {
-        list.innerHTML = history.map(item => {
-          const datePart = `<span>${item.date}</span>`;
-          if (!item.completed) {
-            return `
-              <div class="attempt-item">
-                ${datePart}: <span class="attempt-incomplete">незавершено</span>
-                <button class="continue-btn" onclick="continueAttempt('${item.id}')">Продолжить</button>
-              </div>
-            `;
-          } else {
-            return `
-              <div class="attempt-item">
-                ${datePart}: <span class="attempt-score">${item.score}/${item.max}</span>
-              </div>
-            `;
-          }
-        }).join('');
+        jump();
       }
-    }
+    });
+
+    restartBtn.addEventListener('click', startGame);
+
+    startGame();
   </script>
 </body>
 </html>
