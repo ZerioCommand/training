@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>😎</title>
+  <title>🦕 Динозаврик — Игра</title>
   <style>
     * {
       margin: 0;
@@ -42,11 +42,11 @@
       position: relative;
       width: 800px;
       height: 220px;
-      background: #f0f0f0;
+      background: url('https://i.postimg.cc/ZKgF43Mk/maxresdefault-1.jpg') repeat-x bottom;
+      background-size: auto 100%;
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-      background: linear-gradient(to bottom, #e0e0e0 0%, #ffffff 100%);
     }
 
     #ground {
@@ -64,10 +64,12 @@
       left: 80px;
       width: 50px;
       height: 60px;
-      background: #333;
-      border-radius: 8px 8px 0 0;
       z-index: 10;
-      transform-origin: bottom center;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      font-size: 50px;
+      line-height: 1;
     }
 
     @keyframes run {
@@ -82,11 +84,11 @@
 
     .cactus {
       position: absolute;
-      bottom: 2px;
-      width: 22px;
+      bottom: 0px;
+      width: 44px;
       height: 50px;
       background: #2e7d32;
-      border-radius: 4px 4px 0 0;
+      border-radius: 6px 6px 0 0;
       z-index: 5;
     }
 
@@ -99,17 +101,27 @@
     }
 
     .cactus::before {
-      width: 8px;
-      height: 20px;
-      left: -4px;
-      top: 10px;
+      width: 10px;
+      height: 22px;
+      left: -5px;
+      top: 8px;
     }
 
     .cactus::after {
-      width: 8px;
-      height: 18px;
-      right: -4px;
-      top: 20px;
+      width: 10px;
+      height: 20px;
+      right: -5px;
+      top: 18px;
+    }
+
+    .rock {
+      position: absolute;
+      bottom: 0;
+      width: 44px;
+      height: 12px;
+      background: #555;
+      border-radius: 4px;
+      z-index: 4;
     }
 
     #game-over {
@@ -136,25 +148,6 @@
       100% { transform: translate(-50%, -50%) scale(1); }
     }
 
-    #restart-btn {
-      margin-top: 25px;
-      padding: 12px 30px;
-      font-size: 1.2rem;
-      background: #ff5722;
-      color: white;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    }
-
-    #restart-btn:hover {
-      background: #e64a19;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-    }
-
     .instructions {
       margin-top: 20px;
       font-size: 1rem;
@@ -177,7 +170,7 @@
   </style>
 </head>
 <body>
-  <h1>🦕 Динозаврик</h1>
+  <h1>😎 Не придумал название</h1>
 
   <div class="game-info">
     <div id="score">Счёт: <span>0</span></div>
@@ -186,175 +179,178 @@
 
   <div id="game-container">
     <div id="ground"></div>
-    <div id="dino"></div>
+    <div id="dino">😎</div>
     <div id="game-over">ИГРА ОКОНЧЕНА!</div>
   </div>
 
-  <button id="restart-btn">Начать заново</button>
   <div class="instructions">Нажмите ПРОБЕЛ или КЛИКНИТЕ, чтобы прыгнуть</div>
 
   <script>
-    const dino = document.getElementById('dino');
-    const gameContainer = document.getElementById('game-container');
-    const scoreDisplay = document.getElementById('score').querySelector('span');
-    const highScoreDisplay = document.getElementById('high-score').querySelector('span');
-    const gameOverDisplay = document.getElementById('game-over');
-    const restartBtn = document.getElementById('restart-btn');
+  const dino = document.getElementById('dino');
+  const gameContainer = document.getElementById('game-container');
+  const scoreDisplay = document.getElementById('score').querySelector('span');
+  const highScoreDisplay = document.getElementById('high-score').querySelector('span');
+  const gameOverDisplay = document.getElementById('game-over');
 
-    let isJumping = false;
-    let isGameOver = false;
-    let score = 0;
-    let highScore = localStorage.getItem('dinoHighScore') || 0;
-    let gameSpeed = 6;
-    let cacti = [];
-    let animationId;
-    let nextCactusTimer = null;
+  let isJumping = false;
+  let isGameOver = false;
+  let score = 0;
+  let highScore = localStorage.getItem('dinoHighScore') || 0;
+  let gameSpeed = 6;
+  let obstacles = [];
+  let animationId;
+  let nextObstacleTimer = null;
 
-    highScoreDisplay.textContent = highScore;
+  highScoreDisplay.textContent = highScore;
 
-    function jump() {
-      if (isJumping || isGameOver) return;
-      isJumping = true;
-      dino.classList.remove('running');
+  function jump() {
+    if (isJumping || isGameOver) return;
+    isJumping = true;
+    dino.classList.remove('running');
 
-      let jumpHeight = 0;
-      const jumpDuration = 380;
-      const startTime = performance.now();
+    let jumpHeight = 0;
+    const jumpDuration = 380;
+    const startTime = performance.now();
 
-      function animateJump(time) {
-        const elapsed = time - startTime;
-        const progress = Math.min(elapsed / jumpDuration, 1);
-        jumpHeight = 120 * (1 - Math.pow(2 * progress - 1, 2));
-        dino.style.bottom = jumpHeight + 'px';
+    function animateJump(time) {
+      const elapsed = time - startTime;
+      const progress = Math.min(elapsed / jumpDuration, 1);
+      jumpHeight = 120 * (1 - Math.pow(2 * progress - 1, 2));
+      dino.style.bottom = jumpHeight + 'px';
 
-        if (progress < 1) {
-          requestAnimationFrame(animateJump);
-        } else {
-          dino.style.bottom = '0px';
-          isJumping = false;
-          dino.classList.add('running');
-        }
+      if (progress < 1) {
+        requestAnimationFrame(animateJump);
+      } else {
+        dino.style.bottom = '0px';
+        isJumping = false;
+        dino.classList.add('running');
       }
-
-      requestAnimationFrame(animateJump);
     }
 
-    function createCactus() {
-      if (isGameOver) return;
-      const cactus = document.createElement('div');
-      cactus.classList.add('cactus');
-      cactus.style.left = gameContainer.offsetWidth + 'px';
-      gameContainer.appendChild(cactus);
-      cacti.push(cactus);
+    requestAnimationFrame(animateJump);
+  }
 
-      // Генерируем случайную задержку до следующего кактуса: от 3 до 6 секунд
-      const minDelay = 2000; // 3 сек
-      const maxDelay = 4000; // 6 сек
-      const delay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+  function createObstacle() {
+    if (isGameOver) return;
 
-      nextCactusTimer = setTimeout(createCactus, delay);
+    const type = Math.random() > 0.5 ? 'cactus' : 'rock';
+    const obstacle = document.createElement('div');
+
+    if (type === 'cactus') {
+      obstacle.classList.add('cactus');
+    } else {
+      obstacle.classList.add('rock');
     }
 
-    function moveCacti() {
-      cacti.forEach((cactus, index) => {
-        const currentLeft = parseInt(cactus.style.left) || 0;
-        const newLeft = currentLeft - gameSpeed;
+    obstacle.style.left = gameContainer.offsetWidth + 'px';
+    gameContainer.appendChild(obstacle);
 
-        if (newLeft < -30) {
-          cactus.remove();
-          cacti.splice(index, 1);
-          score++;
-          scoreDisplay.textContent = score;
+    obstacles.push({ element: obstacle, type });
 
-          if (score % 15 === 0) {
-            gameSpeed += 0.7;
-          }
-        } else {
-          cactus.style.left = newLeft + 'px';
+    const minDelay = 1500;
+    const maxDelay = 3500;
+    const delay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+    nextObstacleTimer = setTimeout(createObstacle, delay);
+  }
+
+  function moveObstacles() {
+    obstacles.forEach((item, index) => {
+      const { element } = item;
+      const currentLeft = parseInt(element.style.left) || 0;
+      const newLeft = currentLeft - gameSpeed;
+
+      if (newLeft < -60) {
+        element.remove();
+        obstacles.splice(index, 1);
+        score++;
+        scoreDisplay.textContent = score;
+
+        if (score % 15 === 0) {
+          gameSpeed += 0.7;
         }
-      });
-    }
-
-    function checkCollision() {
-      const dinoRect = dino.getBoundingClientRect();
-      cacti.forEach(cactus => {
-        const cactusRect = cactus.getBoundingClientRect();
-        if (
-          dinoRect.left < cactusRect.right - 5 &&
-          dinoRect.right > cactusRect.left + 5 &&
-          dinoRect.top < cactusRect.bottom - 5 &&
-          dinoRect.bottom > cactusRect.top + 5
-        ) {
-          gameOver();
-        }
-      });
-    }
-
-    function gameOver() {
-      isGameOver = true;
-      cancelAnimationFrame(animationId);
-      if (nextCactusTimer) clearTimeout(nextCactusTimer);
-
-      if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('dinoHighScore', highScore);
-        highScoreDisplay.textContent = highScore;
-      }
-
-      gameOverDisplay.style.display = 'block';
-    }
-
-    function gameLoop() {
-      if (isGameOver) return;
-      moveCacti();
-      checkCollision();
-      animationId = requestAnimationFrame(gameLoop);
-    }
-
-    function startGame() {
-      isGameOver = false;
-      score = 0;
-      gameSpeed = 6;
-      cacti.forEach(c => c.remove());
-      cacti = [];
-      dino.style.bottom = '0px';
-      dino.classList.add('running');
-      gameOverDisplay.style.display = 'none';
-      scoreDisplay.textContent = '0';
-
-      // Очистка предыдущих таймеров
-      if (nextCactusTimer) clearTimeout(nextCactusTimer);
-
-      // Первый кактус через 3–4 секунды
-      const firstDelay = 3000 + Math.random() * 1000;
-      nextCactusTimer = setTimeout(createCactus, firstDelay);
-
-      gameLoop();
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.key === ' ') {
-        if (isGameOver) {
-          startGame();
-        } else {
-          jump();
-        }
-        e.preventDefault();
+      } else {
+        element.style.left = newLeft + 'px';
       }
     });
+  }
 
-    gameContainer.addEventListener('click', () => {
+  function checkCollision() {
+    const dinoRect = dino.getBoundingClientRect();
+    obstacles.forEach(item => {
+      const obstacleRect = item.element.getBoundingClientRect();
+
+      const tolerance = 8;
+      if (
+        dinoRect.left < obstacleRect.right - tolerance &&
+        dinoRect.right > obstacleRect.left + tolerance &&
+        dinoRect.top < obstacleRect.bottom - tolerance &&
+        dinoRect.bottom > obstacleRect.top + tolerance
+      ) {
+        gameOver();
+      }
+    });
+  }
+
+  function gameOver() {
+    isGameOver = true;
+    cancelAnimationFrame(animationId);
+    if (nextObstacleTimer) clearTimeout(nextObstacleTimer);
+
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem('dinoHighScore', highScore);
+      highScoreDisplay.textContent = highScore;
+    }
+
+    gameOverDisplay.style.display = 'block';
+  }
+
+  function startGame() {
+    isGameOver = false;
+    score = 0;
+    gameSpeed = 6;
+    obstacles.forEach(item => item.element.remove());
+    obstacles = [];
+    dino.style.bottom = '0px';
+    dino.classList.add('running');
+    gameOverDisplay.style.display = 'none';
+    scoreDisplay.textContent = '0';
+
+    if (nextObstacleTimer) clearTimeout(nextObstacleTimer);
+
+    const firstDelay = 2000 + Math.random() * 1000;
+    nextObstacleTimer = setTimeout(createObstacle, firstDelay);
+
+    gameLoop();
+  }
+
+  function gameLoop() {
+    if (isGameOver) return;
+    moveObstacles();
+    checkCollision();
+    animationId = requestAnimationFrame(gameLoop);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.key === ' ') {
       if (isGameOver) {
         startGame();
       } else {
         jump();
       }
-    });
+      e.preventDefault();
+    }
+  });
 
-    restartBtn.addEventListener('click', startGame);
+  gameContainer.addEventListener('click', () => {
+    if (isGameOver) {
+      startGame();
+    } else {
+      jump();
+    }
+  });
 
-    startGame();
+  startGame();
   </script>
 </body>
 </html>
-
