@@ -70,7 +70,6 @@
       transform-origin: bottom center;
     }
 
-    /* Анимация "бега" */
     @keyframes run {
       0% { transform: translateY(0); }
       50% { transform: translateY(-3px); }
@@ -156,10 +155,6 @@
       box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
     }
 
-    #restart-btn:active {
-      transform: translateY(1px);
-    }
-
     .instructions {
       margin-top: 20px;
       font-size: 1rem;
@@ -213,6 +208,7 @@
     let gameSpeed = 6;
     let cacti = [];
     let animationId;
+    let nextCactusTimer = null;
 
     highScoreDisplay.textContent = highScore;
 
@@ -222,15 +218,13 @@
       dino.classList.remove('running');
 
       let jumpHeight = 0;
-      const jumpDuration = 400;
+      const jumpDuration = 380;
       const startTime = performance.now();
 
       function animateJump(time) {
         const elapsed = time - startTime;
         const progress = Math.min(elapsed / jumpDuration, 1);
-
         jumpHeight = 120 * (1 - Math.pow(2 * progress - 1, 2));
-
         dino.style.bottom = jumpHeight + 'px';
 
         if (progress < 1) {
@@ -252,6 +246,13 @@
       cactus.style.left = gameContainer.offsetWidth + 'px';
       gameContainer.appendChild(cactus);
       cacti.push(cactus);
+
+      // Генерируем случайную задержку до следующего кактуса: от 3 до 6 секунд
+      const minDelay = 2000; // 3 сек
+      const maxDelay = 4000; // 6 сек
+      const delay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+
+      nextCactusTimer = setTimeout(createCactus, delay);
     }
 
     function moveCacti() {
@@ -266,7 +267,7 @@
           scoreDisplay.textContent = score;
 
           if (score % 15 === 0) {
-            gameSpeed += 0.8;
+            gameSpeed += 0.7;
           }
         } else {
           cactus.style.left = newLeft + 'px';
@@ -292,8 +293,8 @@
     function gameOver() {
       isGameOver = true;
       cancelAnimationFrame(animationId);
+      if (nextCactusTimer) clearTimeout(nextCactusTimer);
 
-      // Обновление рекорда
       if (score > highScore) {
         highScore = score;
         localStorage.setItem('dinoHighScore', highScore);
@@ -321,10 +322,12 @@
       gameOverDisplay.style.display = 'none';
       scoreDisplay.textContent = '0';
 
-      setTimeout(createCactus, 2500);
-      setInterval(() => {
-        if (!isGameOver) createCactus();
-      }, 2500);
+      // Очистка предыдущих таймеров
+      if (nextCactusTimer) clearTimeout(nextCactusTimer);
+
+      // Первый кактус через 3–4 секунды
+      const firstDelay = 3000 + Math.random() * 1000;
+      nextCactusTimer = setTimeout(createCactus, firstDelay);
 
       gameLoop();
     }
