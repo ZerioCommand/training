@@ -1,357 +1,740 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>😎</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Поймай шарик!</title>
   <style>
+    :root {
+      --primary: #00aaff;
+      --primary-dark: #0088cc;
+      --bg-dark: #111;
+      --bg-darker: #0a0a0a;
+      --text: #fff;
+      --accent: #ff4081;
+    }
+
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
     }
 
     body {
-      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
+      justify-content: center;
       align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      color: white;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow: hidden;
+      color: var(--text);
+      padding: 20px;
     }
 
-    h1 {
-      font-size: 2.8rem;
-      margin-bottom: 15px;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-      letter-spacing: 2px;
-    }
-
-    .game-info {
-      display: flex;
-      gap: 30px;
+    .game-header {
+      text-align: center;
       margin-bottom: 20px;
-      font-size: 1.4rem;
-      font-weight: bold;
+      animation: fadeIn 1s ease-out;
     }
 
-    #game-container {
-      position: relative;
-      width: 800px;
-      height: 220px;
-      background: url('https://i.postimg.cc/ZKgF43Mk/maxresdefault-1.jpg') repeat-x bottom;
-      background-size: auto 100%;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    .game-title {
+      font-size: 2.5rem;
+      margin: 0;
+      background: linear-gradient(to right, #00aaff, #ff4081);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 10px rgba(0, 170, 255, 0.3);
     }
 
-    #ground {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 2px;
-      background: #333;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    #dino {
-      position: absolute;
-      bottom: 0;
-      left: 80px;
-      width: 50px;
-      height: 60px;
-      z-index: 10;
+    .game-stats {
       display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      font-size: 50px;
-      line-height: 1;
+      justify-content: space-between;
+      width: 90vw;
+      max-width: 800px;
+      margin-bottom: 15px;
+      animation: slideDown 0.8s ease-out;
     }
 
-    @keyframes run {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-3px); }
-      100% { transform: translateY(0); }
+    .stat-box {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 15px 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+      min-width: 150px;
+      transition: transform 0.3s, box-shadow 0.3s;
     }
 
-    .running {
-      animation: run 0.2s infinite;
+    .stat-box:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
     }
 
-    .cactus {
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-top: 5px;
+      color: var(--primary);
+    }
+
+    #game-area {
+      position: relative;
+      width: 90vw;
+      max-width: 800px;
+      height: 60vh;
+      background: var(--bg-darker);
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0, 200, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      animation: scaleIn 0.8s ease-out;
+    }
+
+    .ball {
       position: absolute;
-      bottom: 0px;
-      width: 44px;
-      height: 50px;
-      background: #2e7d32;
-      border-radius: 6px 6px 0 0;
-      z-index: 5;
+      border-radius: 50%;
+      cursor: pointer;
+      user-select: none;
+      animation: pop 0.4s ease-out;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .cactus::before,
-    .cactus::after {
-      content: '';
-      position: absolute;
-      background: #2e7d32;
-      border-radius: 2px;
+    .ball:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
     }
 
-    .cactus::before {
-      width: 10px;
-      height: 22px;
-      left: -5px;
-      top: 8px;
+    @keyframes pop {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
     }
 
-    .cactus::after {
-      width: 10px;
-      height: 20px;
-      right: -5px;
-      top: 18px;
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
-    .rock {
-      position: absolute;
-      bottom: 0;
-      width: 44px;
-      height: 12px;
+    @keyframes slideDown {
+      from { transform: translateY(-30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      animation: fadeIn 1s ease-out 0.5s both;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 10px rgba(0, 170, 255, 0.3);
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0, 170, 255, 0.4);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
       background: #555;
-      border-radius: 4px;
-      z-index: 4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
-    #game-over {
-      position: absolute;
+    #settings-btn {
+      background: var(--accent);
+      box-shadow: 0 4px 10px rgba(255, 64, 129, 0.3);
+    }
+
+    #settings-btn:hover {
+      background: #e91e63;
+      box-shadow: 0 6px 15px rgba(255, 64, 129, 0.4);
+    }
+
+    .settings-panel {
+      position: fixed;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.85);
-      color: white;
-      padding: 20px 40px;
-      border-radius: 12px;
-      font-size: 2.2rem;
-      font-weight: bold;
-      text-align: center;
-      display: none;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: rgba(30, 30, 46, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      width: 90%;
+      max-width: 500px;
       z-index: 100;
-      box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
-      animation: pulse 1.5s infinite;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.4s;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    @keyframes pulse {
-      0% { transform: translate(-50%, -50%) scale(1); }
-      50% { transform: translate(-50%, -50%) scale(1.05); }
-      100% { transform: translate(-50%, -50%) scale(1); }
+    .settings-panel.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
     }
 
-    .instructions {
-      margin-top: 20px;
-      font-size: 1rem;
-      opacity: 0.9;
+    .settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 15px;
+    }
+
+    .settings-title {
+      font-size: 1.5rem;
+      margin: 0;
+      color: var(--primary);
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 5px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .setting-group {
+      margin-bottom: 20px;
+    }
+
+    .setting-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .value-display {
+      min-width: 40px;
       text-align: center;
+      font-weight: bold;
+      color: var(--primary);
     }
 
-    @media (max-width: 850px) {
-      #game-container {
-        width: 95vw;
-        height: 180px;
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(3px);
+      z-index: 99;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .game-over {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: rgba(30, 30, 46, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      z-index: 101;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.4s;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 90%;
+      width: 400px;
+    }
+
+    .game-over.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .game-over h2 {
+      margin-top: 0;
+      color: var(--primary);
+      font-size: 2rem;
+    }
+
+    .final-score {
+      font-size: 3rem;
+      font-weight: bold;
+      margin: 20px 0;
+      color: var(--accent);
+    }
+
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      animation: float 5s infinite linear;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0;
       }
-      h1 {
-        font-size: 2rem;
+      10% {
+        opacity: 1;
       }
-      .game-info {
-        font-size: 1.1rem;
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    .difficulty-indicator {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      z-index: 2;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    @media (max-width: 768px) {
+      .game-stats {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+      }
+      
+      .stat-box {
+        width: 100%;
+        max-width: 250px;
+      }
+      
+      .controls {
+        flex-direction: column;
+        width: 100%;
+        max-width: 250px;
       }
     }
   </style>
 </head>
 <body>
-  <h1>😎 Не придумал название</h1>
-
-  <div class="game-info">
-    <div id="score">Счёт: <span>0</span></div>
-    <div id="high-score">Рекорд: <span>0</span></div>
+  <div class="game-header">
+    <h1 class="game-title">Поймай шарик!</h1>
   </div>
 
-  <div id="game-container">
-    <div id="ground"></div>
-    <div id="dino">😎</div>
-    <div id="game-over">ИГРА ОКОНЧЕНА!</div>
+  <div class="game-stats">
+    <div class="stat-box">
+      <div>Очки</div>
+      <div id="score" class="stat-value">0</div>
+    </div>
+    <div class="stat-box">
+      <div>Время</div>
+      <div id="timer" class="stat-value">20</div>
+    </div>
   </div>
 
-  <div class="instructions">Нажмите ПРОБЕЛ или КЛИКНИТЕ, чтобы прыгнуть</div>
+  <div id="game-area">
+    <div class="difficulty-indicator" id="difficulty-indicator">Уровень: 1</div>
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <div class="controls">
+    <button id="start-btn">Начать игру</button>
+    <button id="settings-btn">Настройки</button>
+  </div>
+
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-header">
+      <h2 class="settings-title">Настройки игры</h2>
+      <button class="close-btn" id="close-settings">×</button>
+    </div>
+    
+    <div class="setting-group">
+      <label class="setting-label">Скорость появления шариков (мс)</label>
+      <div class="slider-container">
+        <input type="range" id="spawn-speed" min="200" max="1500" value="600">
+        <span id="spawn-speed-value" class="value-display">600</span>
+      </div>
+    </div>
+    
+    <div class="setting-group">
+      <label class="setting-label">Время жизни шариков (мс)</label>
+      <div class="slider-container">
+        <input type="range" id="ball-lifetime" min="500" max="3000" value="2000">
+        <span id="ball-lifetime-value" class="value-display">2000</span>
+      </div>
+    </div>
+    
+    <div class="setting-group">
+      <label class="setting-label">Время игры (сек)</label>
+      <div class="slider-container">
+        <input type="range" id="game-time" min="10" max="60" value="20">
+        <span id="game-time-value" class="value-display">20</span>
+      </div>
+    </div>
+    
+    <div class="setting-group">
+      <label class="setting-label">Динамическая сложность</label>
+      <div class="checkbox-container">
+        <input type="checkbox" id="dynamic-difficulty" checked>
+        <label for="dynamic-difficulty">Включить увеличение сложности по мере игры</label>
+      </div>
+      <div style="font-size: 0.8rem; margin-top: 5px; color: #aaa;">
+        При включении скорость появления шариков будет увеличиваться, а время их жизни уменьшаться по мере набора очков
+      </div>
+    </div>
+    
+    <button id="save-settings">Сохранить настройки</button>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="game-over" id="game-over">
+    <h2>Игра окончена!</h2>
+    <div class="final-score" id="final-score">0</div>
+    <button id="restart-btn">Играть снова</button>
+  </div>
 
   <script>
-  const dino = document.getElementById('dino');
-  const gameContainer = document.getElementById('game-container');
-  const scoreDisplay = document.getElementById('score').querySelector('span');
-  const highScoreDisplay = document.getElementById('high-score').querySelector('span');
-  const gameOverDisplay = document.getElementById('game-over');
+    const gameArea = document.getElementById('game-area');
+    const scoreEl = document.getElementById('score');
+    const timerEl = document.getElementById('timer');
+    const startBtn = document.getElementById('start-btn');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    const closeSettings = document.getElementById('close-settings');
+    const overlay = document.getElementById('overlay');
+    const gameOverPanel = document.getElementById('game-over');
+    const finalScore = document.getElementById('final-score');
+    const restartBtn = document.getElementById('restart-btn');
+    const particlesContainer = document.getElementById('particles');
+    const difficultyIndicator = document.getElementById('difficulty-indicator');
 
-  let isJumping = false;
-  let isGameOver = false;
-  let score = 0;
-  let highScore = localStorage.getItem('dinoHighScore') || 0;
-  let gameSpeed = 6;
-  let obstacles = [];
-  let animationId;
-  let nextObstacleTimer = null;
+    const spawnSpeedSlider = document.getElementById('spawn-speed');
+    const spawnSpeedValue = document.getElementById('spawn-speed-value');
+    const ballLifetimeSlider = document.getElementById('ball-lifetime');
+    const ballLifetimeValue = document.getElementById('ball-lifetime-value');
+    const gameTimeSlider = document.getElementById('game-time');
+    const gameTimeValue = document.getElementById('game-time-value');
+    const dynamicDifficultyCheckbox = document.getElementById('dynamic-difficulty');
+    const saveSettingsBtn = document.getElementById('save-settings');
 
-  highScoreDisplay.textContent = highScore;
+    let score = 0;
+    let timeLeft = 20;
+    let gameActive = false;
+    let spawnInterval;
+    let countdown;
+    let difficultyLevel = 1;
 
-  function jump() {
-    if (isJumping || isGameOver) return;
-    isJumping = true;
-    dino.classList.remove('running');
+    let settings = {
+      spawnSpeed: 600,
+      ballLifetime: 2000,
+      gameTime: 20,
+      dynamicDifficulty: true
+    };
 
-    let jumpHeight = 0;
-    const jumpDuration = 380;
-    const startTime = performance.now();
-
-    function animateJump(time) {
-      const elapsed = time - startTime;
-      const progress = Math.min(elapsed / jumpDuration, 1);
-      jumpHeight = 120 * (1 - Math.pow(2 * progress - 1, 2));
-      dino.style.bottom = jumpHeight + 'px';
-
-      if (progress < 1) {
-        requestAnimationFrame(animateJump);
-      } else {
-        dino.style.bottom = '0px';
-        isJumping = false;
-        dino.classList.add('running');
+    function createParticles() {
+      particlesContainer.innerHTML = '';
+      for (let i = 0; i < 30; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 5 + 's';
+        particle.style.animationDuration = (3 + Math.random() * 7) + 's';
+        particlesContainer.appendChild(particle);
       }
     }
 
-    requestAnimationFrame(animateJump);
-  }
-
-  function createObstacle() {
-    if (isGameOver) return;
-
-    const type = Math.random() > 0.5 ? 'cactus' : 'rock';
-    const obstacle = document.createElement('div');
-
-    if (type === 'cactus') {
-      obstacle.classList.add('cactus');
-    } else {
-      obstacle.classList.add('rock');
+    function updateSliderValues() {
+      spawnSpeedValue.textContent = spawnSpeedSlider.value;
+      ballLifetimeValue.textContent = ballLifetimeSlider.value;
+      gameTimeValue.textContent = gameTimeSlider.value;
     }
 
-    obstacle.style.left = gameContainer.offsetWidth + 'px';
-    gameContainer.appendChild(obstacle);
+    function loadSettings() {
+      const savedSettings = localStorage.getItem('ballGameSettings');
+      if (savedSettings) {
+        settings = JSON.parse(savedSettings);
+        spawnSpeedSlider.value = settings.spawnSpeed;
+        ballLifetimeSlider.value = settings.ballLifetime;
+        gameTimeSlider.value = settings.gameTime;
+        dynamicDifficultyCheckbox.checked = settings.dynamicDifficulty;
+        updateSliderValues();
+      }
+    }
 
-    obstacles.push({ element: obstacle, type });
+    function saveSettings() {
+      settings.spawnSpeed = parseInt(spawnSpeedSlider.value);
+      settings.ballLifetime = parseInt(ballLifetimeSlider.value);
+      settings.gameTime = parseInt(gameTimeSlider.value);
+      settings.dynamicDifficulty = dynamicDifficultyCheckbox.checked;
+      localStorage.setItem('ballGameSettings', JSON.stringify(settings));
+      
+      settingsPanel.classList.remove('active');
+      overlay.classList.remove('active');
+    }
 
-    const minDelay = 1500;
-    const maxDelay = 3500;
-    const delay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
-    nextObstacleTimer = setTimeout(createObstacle, delay);
-  }
+    function calculateDifficulty() {
+      if (!settings.dynamicDifficulty) {
+        return {
+          spawnSpeed: settings.spawnSpeed,
+          ballLifetime: settings.ballLifetime
+        };
+      }
+      
+      difficultyLevel = Math.floor(score / 50) + 1;
+      
+      difficultyIndicator.textContent = `Уровень: ${difficultyLevel}`;
+      
+      const minSpawnSpeed = Math.max(200, settings.spawnSpeed / 2);
+      const spawnSpeed = Math.max(minSpawnSpeed, settings.spawnSpeed - (difficultyLevel - 1) * 100);
+      
+      const ballLifetime = Math.max(500, settings.ballLifetime - (difficultyLevel - 1) * 200);
+      
+      return {
+        spawnSpeed,
+        ballLifetime
+      };
+    }
 
-  function moveObstacles() {
-    obstacles.forEach((item, index) => {
-      const { element } = item;
-      const currentLeft = parseInt(element.style.left) || 0;
-      const newLeft = currentLeft - gameSpeed;
+    function createBall() {
+      if (!gameActive) return;
 
-      if (newLeft < -60) {
-        element.remove();
-        obstacles.splice(index, 1);
-        score++;
-        scoreDisplay.textContent = score;
+      const difficulty = calculateDifficulty();
+      
+      const ball = document.createElement('div');
+      ball.classList.add('ball');
 
-        if (score % 15 === 0) {
-          gameSpeed += 0.7;
+      const size = 30 + Math.random() * 40;
+      ball.style.width = size + 'px';
+      ball.style.height = size + 'px';
+
+      const hue = Math.floor(Math.random() * 360);
+      ball.style.background = `radial-gradient(circle at 30% 30%, hsl(${hue}, 100%, 70%), hsl(${hue}, 80%, 50%))`;
+
+      const maxX = gameArea.clientWidth - size;
+      const maxY = gameArea.clientHeight - size;
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
+
+      ball.style.left = x + 'px';
+      ball.style.top = y + 'px';
+
+      ball.onclick = () => {
+        if (!gameActive) return;
+        const points = Math.round(120 / (size / 30));
+        score += points;
+        scoreEl.textContent = score;
+        
+        ball.style.transform = 'scale(1.5)';
+        ball.style.opacity = '0';
+        setTimeout(() => {
+          if (ball.parentNode === gameArea) {
+            ball.remove();
+          }
+        }, 300);
+      };
+
+      gameArea.appendChild(ball);
+
+      setTimeout(() => {
+        if (ball.parentNode === gameArea) {
+          ball.style.opacity = '0';
+          ball.style.transform = 'scale(0.5)';
+          setTimeout(() => {
+            if (ball.parentNode === gameArea) {
+              ball.remove();
+            }
+          }, 500);
         }
-      } else {
-        element.style.left = newLeft + 'px';
-      }
-    });
-  }
-
-  function checkCollision() {
-    const dinoRect = dino.getBoundingClientRect();
-    obstacles.forEach(item => {
-      const obstacleRect = item.element.getBoundingClientRect();
-
-      const tolerance = 8;
-      if (
-        dinoRect.left < obstacleRect.right - tolerance &&
-        dinoRect.right > obstacleRect.left + tolerance &&
-        dinoRect.top < obstacleRect.bottom - tolerance &&
-        dinoRect.bottom > obstacleRect.top + tolerance
-      ) {
-        gameOver();
-      }
-    });
-  }
-
-  function gameOver() {
-    isGameOver = true;
-    cancelAnimationFrame(animationId);
-    if (nextObstacleTimer) clearTimeout(nextObstacleTimer);
-
-    if (score > highScore) {
-      highScore = score;
-      localStorage.setItem('dinoHighScore', highScore);
-      highScoreDisplay.textContent = highScore;
+      }, difficulty.ballLifetime);
     }
 
-    gameOverDisplay.style.display = 'block';
-  }
+    function startGame() {
+      if (gameActive) return;
 
-  function startGame() {
-    isGameOver = false;
-    score = 0;
-    gameSpeed = 6;
-    obstacles.forEach(item => item.element.remove());
-    obstacles = [];
-    dino.style.bottom = '0px';
-    dino.classList.add('running');
-    gameOverDisplay.style.display = 'none';
-    scoreDisplay.textContent = '0';
+      score = 0;
+      timeLeft = settings.gameTime;
+      difficultyLevel = 1;
+      scoreEl.textContent = score;
+      timerEl.textContent = timeLeft;
+      gameArea.innerHTML = '';
+      difficultyIndicator.textContent = `Уровень: ${difficultyLevel}`;
+      gameArea.appendChild(difficultyIndicator);
+      createParticles();
+      gameActive = true;
+      startBtn.disabled = true;
+      settingsBtn.disabled = true;
 
-    if (nextObstacleTimer) clearTimeout(nextObstacleTimer);
+      spawnInterval = setInterval(() => {
+        const difficulty = calculateDifficulty();
+        createBall();
+      }, settings.spawnSpeed);
 
-    const firstDelay = 2000 + Math.random() * 1000;
-    nextObstacleTimer = setTimeout(createObstacle, firstDelay);
-
-    gameLoop();
-  }
-
-  function gameLoop() {
-    if (isGameOver) return;
-    moveObstacles();
-    checkCollision();
-    animationId = requestAnimationFrame(gameLoop);
-  }
-
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' || e.key === ' ') {
-      if (isGameOver) {
-        startGame();
-      } else {
-        jump();
-      }
-      e.preventDefault();
+      countdown = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        if (timeLeft <= 0) endGame();
+      }, 1000);
     }
-  });
 
-  gameContainer.addEventListener('click', () => {
-    if (isGameOver) {
+    function endGame() {
+      gameActive = false;
+      clearInterval(spawnInterval);
+      clearInterval(countdown);
+      startBtn.disabled = false;
+      settingsBtn.disabled = false;
+      
+      finalScore.textContent = score;
+      gameOverPanel.classList.add('active');
+      overlay.classList.add('active');
+    }
+
+    function restartGame() {
+      gameOverPanel.classList.remove('active');
+      overlay.classList.remove('active');
       startGame();
-    } else {
-      jump();
     }
-  });
 
-  startGame();
+    document.addEventListener('DOMContentLoaded', () => {
+      createParticles();
+      loadSettings();
+      updateSliderValues();
+    });
+
+    startBtn.addEventListener('click', startGame);
+    
+    settingsBtn.addEventListener('click', () => {
+      settingsPanel.classList.add('active');
+      overlay.classList.add('active');
+    });
+    
+    closeSettings.addEventListener('click', () => {
+      settingsPanel.classList.remove('active');
+      overlay.classList.remove('active');
+    });
+    
+    overlay.addEventListener('click', () => {
+      settingsPanel.classList.remove('active');
+      gameOverPanel.classList.remove('active');
+      overlay.classList.remove('active');
+    });
+    
+    restartBtn.addEventListener('click', restartGame);
+    
+    saveSettingsBtn.addEventListener('click', saveSettings);
+    
+    spawnSpeedSlider.addEventListener('input', () => {
+      spawnSpeedValue.textContent = spawnSpeedSlider.value;
+    });
+    
+    ballLifetimeSlider.addEventListener('input', () => {
+      ballLifetimeValue.textContent = ballLifetimeSlider.value;
+    });
+    
+    gameTimeSlider.addEventListener('input', () => {
+      gameTimeValue.textContent = gameTimeSlider.value;
+    });
   </script>
 </body>
 </html>
-
