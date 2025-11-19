@@ -12,6 +12,7 @@
       --bg-darker: #0a0a0a;
       --text: #fff;
       --accent: #ff4081;
+      --combo-color: #ffcc00;
     }
 
     * {
@@ -397,6 +398,67 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    /* Стили для комбо-системы */
+    .combo-display {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      z-index: 2;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s;
+    }
+
+    .combo-active {
+      background: rgba(255, 204, 0, 0.3);
+      border-color: var(--combo-color);
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+    }
+
+    .combo-popup {
+      position: absolute;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--combo-color);
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+      z-index: 10;
+      pointer-events: none;
+      animation: comboFloat 1.5s ease-out forwards;
+    }
+
+    @keyframes comboFloat {
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-50px) scale(1.5);
+        opacity: 0;
+      }
+    }
+
+    .combo-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      z-index: 2;
+    }
+
+    .combo-progress {
+      height: 100%;
+      background: linear-gradient(to right, var(--combo-color), #ff9900);
+      width: 0%;
+      transition: width 0.3s;
+      border-radius: 0 2px 2px 0;
+    }
+
     @media (max-width: 768px) {
       .game-stats {
         flex-direction: column;
@@ -431,9 +493,19 @@
       <div>Время</div>
       <div id="timer" class="stat-value">20</div>
     </div>
+    <div class="stat-box">
+      <div>Комбо</div>
+      <div id="combo" class="stat-value">x1</div>
+    </div>
   </div>
 
   <div id="game-area">
+    <div class="combo-display" id="combo-display">
+      <div>Комбо: <span id="combo-count">0</span></div>
+      <div class="combo-bar">
+        <div class="combo-progress" id="combo-progress"></div>
+      </div>
+    </div>
     <div class="difficulty-indicator" id="difficulty-indicator">Уровень: 1</div>
     <div class="particles" id="particles"></div>
   </div>
@@ -484,6 +556,17 @@
       </div>
     </div>
     
+    <div class="setting-group">
+      <label class="setting-label">Комбо-система</label>
+      <div class="checkbox-container">
+        <input type="checkbox" id="combo-system" checked>
+        <label for="combo-system">Включить комбо-систему</label>
+      </div>
+      <div style="font-size: 0.8rem; margin-top: 5px; color: #aaa;">
+        При быстром попадании по шарикам множитель очков увеличивается
+      </div>
+    </div>
+    
     <button id="save-settings">Сохранить настройки</button>
   </div>
 
@@ -492,6 +575,7 @@
   <div class="game-over" id="game-over">
     <h2>Игра окончена!</h2>
     <div class="final-score" id="final-score">0</div>
+    <div>Максимальное комбо: <span id="max-combo">0</span></div>
     <button id="restart-btn">Играть снова</button>
   </div>
 
@@ -499,6 +583,7 @@
     const gameArea = document.getElementById('game-area');
     const scoreEl = document.getElementById('score');
     const timerEl = document.getElementById('timer');
+    const comboEl = document.getElementById('combo');
     const startBtn = document.getElementById('start-btn');
     const settingsBtn = document.getElementById('settings-btn');
     const settingsPanel = document.getElementById('settings-panel');
@@ -506,9 +591,13 @@
     const overlay = document.getElementById('overlay');
     const gameOverPanel = document.getElementById('game-over');
     const finalScore = document.getElementById('final-score');
+    const maxComboEl = document.getElementById('max-combo');
     const restartBtn = document.getElementById('restart-btn');
     const particlesContainer = document.getElementById('particles');
     const difficultyIndicator = document.getElementById('difficulty-indicator');
+    const comboDisplay = document.getElementById('combo-display');
+    const comboCountEl = document.getElementById('combo-count');
+    const comboProgress = document.getElementById('combo-progress');
 
     const spawnSpeedSlider = document.getElementById('spawn-speed');
     const spawnSpeedValue = document.getElementById('spawn-speed-value');
@@ -517,6 +606,7 @@
     const gameTimeSlider = document.getElementById('game-time');
     const gameTimeValue = document.getElementById('game-time-value');
     const dynamicDifficultyCheckbox = document.getElementById('dynamic-difficulty');
+    const comboSystemCheckbox = document.getElementById('combo-system');
     const saveSettingsBtn = document.getElementById('save-settings');
 
     let score = 0;
@@ -525,12 +615,22 @@
     let spawnInterval;
     let countdown;
     let difficultyLevel = 1;
+    
+    // Комбо-система
+    let comboCount = 0;
+    let comboMultiplier = 1;
+    let maxCombo = 0;
+    let lastClickTime = 0;
+    let comboTimeout;
+    const COMBO_TIME_WINDOW = 2000; // 2 секунды для комбо
+    const COMBO_DECAY_TIME = 3000; // 3 секунды до сброса комбо
 
     let settings = {
       spawnSpeed: 600,
       ballLifetime: 2000,
       gameTime: 20,
-      dynamicDifficulty: true
+      dynamicDifficulty: true,
+      comboSystem: true
     };
 
     function createParticles() {
@@ -559,6 +659,7 @@
         ballLifetimeSlider.value = settings.ballLifetime;
         gameTimeSlider.value = settings.gameTime;
         dynamicDifficultyCheckbox.checked = settings.dynamicDifficulty;
+        comboSystemCheckbox.checked = settings.comboSystem;
         updateSliderValues();
       }
     }
@@ -568,6 +669,7 @@
       settings.ballLifetime = parseInt(ballLifetimeSlider.value);
       settings.gameTime = parseInt(gameTimeSlider.value);
       settings.dynamicDifficulty = dynamicDifficultyCheckbox.checked;
+      settings.comboSystem = comboSystemCheckbox.checked;
       localStorage.setItem('ballGameSettings', JSON.stringify(settings));
       
       settingsPanel.classList.remove('active');
@@ -597,6 +699,87 @@
       };
     }
 
+    // Функции комбо-системы
+    function updateCombo() {
+      comboCountEl.textContent = comboCount;
+      comboEl.textContent = `x${comboMultiplier}`;
+      
+      // Обновляем прогресс-бар
+      const progress = (comboCount % 5) / 5 * 100;
+      comboProgress.style.width = `${progress}%`;
+      
+      // Обновляем внешний вид комбо-дисплея
+      if (comboCount >= 5) {
+        comboDisplay.classList.add('combo-active');
+      } else {
+        comboDisplay.classList.remove('combo-active');
+      }
+    }
+
+    function addCombo() {
+      if (!settings.comboSystem) return;
+      
+      const currentTime = Date.now();
+      
+      // Если прошло больше времени чем COMBO_TIME_WINDOW, сбрасываем комбо
+      if (currentTime - lastClickTime > COMBO_TIME_WINDOW) {
+        comboCount = 0;
+      }
+      
+      // Увеличиваем комбо
+      comboCount++;
+      lastClickTime = currentTime;
+      
+      // Обновляем множитель каждые 5 комбо
+      comboMultiplier = 1 + Math.floor(comboCount / 5);
+      
+      // Обновляем максимальное комбо
+      if (comboCount > maxCombo) {
+        maxCombo = comboCount;
+      }
+      
+      updateCombo();
+      
+      // Создаем попап комбо
+      createComboPopup();
+      
+      // Сбрасываем таймер сброса комбо
+      clearTimeout(comboTimeout);
+      comboTimeout = setTimeout(() => {
+        resetCombo();
+      }, COMBO_DECAY_TIME);
+    }
+
+    function resetCombo() {
+      comboCount = 0;
+      comboMultiplier = 1;
+      updateCombo();
+    }
+
+    function createComboPopup() {
+      if (comboCount < 5) return;
+      
+      const popup = document.createElement('div');
+      popup.classList.add('combo-popup');
+      popup.textContent = `COMBO x${comboMultiplier}!`;
+      
+      // Позиционируем попап в случайном месте игровой области
+      const x = Math.random() * (gameArea.clientWidth - 150) + 75;
+      const y = Math.random() * (gameArea.clientHeight - 100) + 50;
+      
+      popup.style.left = `${x}px`;
+      popup.style.top = `${y}px`;
+      
+      gameArea.appendChild(popup);
+      
+      // Удаляем попап после анимации
+      setTimeout(() => {
+        if (popup.parentNode === gameArea) {
+          popup.remove();
+        }
+      }, 1500);
+    }
+
     function createBall() {
       if (!gameActive) return;
 
@@ -622,7 +805,12 @@
 
       ball.onclick = () => {
         if (!gameActive) return;
-        const points = Math.round(120 / (size / 30));
+        
+        // Добавляем комбо
+        addCombo();
+        
+        const basePoints = Math.round(120 / (size / 30));
+        const points = basePoints * comboMultiplier;
         score += points;
         scoreEl.textContent = score;
         
@@ -660,8 +848,19 @@
       timerEl.textContent = timeLeft;
       gameArea.innerHTML = '';
       difficultyIndicator.textContent = `Уровень: ${difficultyLevel}`;
+      
+      // Сбрасываем комбо
+      comboCount = 0;
+      comboMultiplier = 1;
+      maxCombo = 0;
+      lastClickTime = 0;
+      updateCombo();
+      
+      // Добавляем элементы обратно
+      gameArea.appendChild(comboDisplay);
       gameArea.appendChild(difficultyIndicator);
       createParticles();
+      
       gameActive = true;
       startBtn.disabled = true;
       settingsBtn.disabled = true;
@@ -682,10 +881,12 @@
       gameActive = false;
       clearInterval(spawnInterval);
       clearInterval(countdown);
+      clearTimeout(comboTimeout);
       startBtn.disabled = false;
       settingsBtn.disabled = false;
       
       finalScore.textContent = score;
+      maxComboEl.textContent = maxCombo;
       gameOverPanel.classList.add('active');
       overlay.classList.add('active');
     }
@@ -700,6 +901,7 @@
       createParticles();
       loadSettings();
       updateSliderValues();
+      updateCombo();
     });
 
     startBtn.addEventListener('click', startGame);
